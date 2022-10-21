@@ -1,7 +1,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
-#include "famework/common/assert.hpp"
-
+#include "framework/common/logging.hpp"
 #include <iostream>
 
 int main() {
@@ -13,6 +12,12 @@ int main() {
         std::cerr << "ERROR Vulkan is not supported! Aborting..." << std::endl;
         return -1;
     }
+
+    const char * str = "works!";
+    SE_TRACE("Hope this %s", str);
+    SE_WARN("This is a warning.");
+    SE_ERROR("This is an error.");
+    SE_FATAL("Something VERY BAD just happened.");
 
     return 0;
 }
