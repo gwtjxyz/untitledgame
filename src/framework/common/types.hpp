@@ -8,19 +8,19 @@
  *
  *  Definitions for types used by the rest of the program
  *
-*/
+ */
 //----------------------------------------------------------------------------------------
 
 #include <cstdint>
 
 // 32-bit types
-typedef int8_t i8;
-typedef int16_t i16;
-typedef int32_t i32;
-typedef int64_t i64;
+[[maybe_unused]] typedef int8_t i8;
+[[maybe_unused]] typedef int16_t i16;
+[[maybe_unused]] typedef int32_t i32;
+[[maybe_unused]] typedef int64_t i64;
 
 // 64-bit types
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
+[[maybe_unused]] typedef uint8_t u8;
+[[maybe_unused]] typedef uint16_t u16;
+[[maybe_unused]] typedef uint32_t u32;
+[[maybe_unused]] typedef uint64_t u64;

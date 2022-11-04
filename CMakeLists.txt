@@ -3,10 +3,17 @@ project(untitledgame)
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Compiler flags
+# TODO other compilers
+if(MSVC)
+    set(MSVC_COVERAGE_COMPILE_FLAGS "/W4")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MSVC_COVERAGE_COMPILE_FLAGS}")
+endif()
+
 set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 
-add_executable(untitledgame src/main.cpp)
+add_executable(untitledgame src/main.cpp src/framework/platform/window.cpp)
 
 find_package(Vulkan REQUIRED FATAL_ERROR)
 

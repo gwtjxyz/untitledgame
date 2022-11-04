@@ -1,4 +1,15 @@
 #pragma once
+//----------------------------------------------------------------------------------------
+/**
+ * \file       logging.hpp
+ * \author     Yury Udavichenka
+ * \date       21/10/2022
+ * \brief      Logger header file
+ *
+ *  Simple multi-platform header file used for logging and assertion.
+ *  TODO add support for more compilers/platforms, currently only Windows/MSVC support is properly implemented
+ */
+//----------------------------------------------------------------------------------------
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -19,8 +30,8 @@ namespace se_internals {
     };
 
 #ifdef _WIN32
-    static u32 get_log_color_bits(se_internals::Color color) {
-        u32 colorBits = 0;
+    static u16 get_log_color_bits(se_internals::Color color) {
+        u16 colorBits = 0;
 
         switch (color) {
             case TEXT_COLOR_RED:
@@ -48,13 +59,13 @@ namespace se_internals {
 
     static void windows_log(const char * msg, const se_internals::Color color) {
         HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-        u32 colorBits = get_log_color_bits(color);
+        u16 colorBits = get_log_color_bits(color);
         SetConsoleTextAttribute(consoleHandle, colorBits);
 
     #ifdef DEBUG
-            OutputDebugStringA(msg);
+        OutputDebugStringA(msg);
     #endif
-        WriteConsoleA(consoleHandle, msg, strlen(msg), 0, 0);
+        WriteConsoleA(consoleHandle, msg, (u32) strlen(msg), nullptr, nullptr);
     }
 #endif
 
@@ -77,20 +88,37 @@ namespace se_internals {
 
         platform_log(msgBuffer, color);
     }
+
+    void line_and_file_info(const char * fileName, int lineNumber) {
+        char buffer[32000] = {};
+        sprintf(buffer, "%s:%d: ", fileName, lineNumber);
+
+        platform_log(buffer, TEXT_COLOR_WHITE);
+    }
 } /* namespace se_internals */
 
+#define SE_LINEINFO
 #define SE_TRACE(msg, ...) se_internals::log("TRACE", se_internals::TEXT_COLOR_GREEN,     msg, __VA_ARGS__)
 #define SE_WARN(msg, ...)  se_internals::log("WARN",  se_internals::TEXT_COLOR_YELLOW,    msg, __VA_ARGS__)
 #define SE_ERROR(msg, ...) se_internals::log("ERROR", se_internals::TEXT_COLOR_RED,       msg, __VA_ARGS__)
 #define SE_FATAL(msg, ...) se_internals::log("FATAL", se_internals::TEXT_COLOR_LIGHT_RED, msg, __VA_ARGS__)
 
-#ifdef DEBUG
-#define SE_ASSERT(x, msg, ...)          \
-    {                                   \
-    if (!(x)){                          \
-        SE_ERROR(msg, __VA_ARGS__);     \
-        __debugbreak();                 \
-    }                                   \
+#ifdef _MSC_VER // MSVC
+#define SE_DEBUG_BREAK __debugbreak()
+#elif __clang__
+#define SE_DEBUG_BREAK __builtin_debugtrap()
+#else   // TODO expand
+#define SE_DEBUG_BREAK
+#endif
+
+#if defined DEBUG || defined _DEBUG
+#define SE_ASSERT(x, msg, ...)                                  \
+    {                                                           \
+    if (!(x)){                                                  \
+        se_internals::line_and_file_info(__FILE__, __LINE__);   \
+        SE_ERROR(msg, __VA_ARGS__);                             \
+        SE_DEBUG_BREAK;                                         \
+    }                                                           \
 }
 #else
 #define SE_ASSERT(x, msg, ...)

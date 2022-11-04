@@ -17,6 +17,7 @@ int main() {
     SE_TRACE("Hope this %s", str);
     SE_WARN("This is a warning.");
     SE_ERROR("This is an error.");
+    SE_TRACE("Trace at %s:%d", __FILE__, __LINE__);
     SE_FATAL("Something VERY BAD just happened.");
 
     return 0;
