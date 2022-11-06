@@ -1,4 +1,3 @@
-#pragma once
 //----------------------------------------------------------------------------------------
 /**
  * \file       logging.hpp
@@ -10,6 +9,7 @@
  *  TODO add support for more compilers/platforms, currently only Windows/MSVC support is properly implemented
  */
 //----------------------------------------------------------------------------------------
+#pragma once
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -80,18 +80,18 @@ namespace se_internals {
     }
 
     template<typename ...Args>
-    void log(const char * prefix, const se_internals::Color color, const char * msg, Args ...args) {
+    static void log(const char * prefix, const se_internals::Color color, const char * msg, Args ...args) {
         char fmtBuffer[32000] = {};
         char msgBuffer[32000] = {};
-        sprintf(fmtBuffer, "%s: %s\n", prefix, msg);
-        sprintf(msgBuffer, fmtBuffer, args...);
+        sprintf_s(fmtBuffer, "%s: %s\n", prefix, msg);
+        sprintf_s(msgBuffer, fmtBuffer, args...);
 
         platform_log(msgBuffer, color);
     }
 
-    void line_and_file_info(const char * fileName, int lineNumber) {
+    static void line_and_file_info(const char * fileName, int lineNumber) {
         char buffer[32000] = {};
-        sprintf(buffer, "%s:%d: ", fileName, lineNumber);
+        sprintf_s(buffer, "%s:%d: ", fileName, lineNumber);
 
         platform_log(buffer, TEXT_COLOR_WHITE);
     }

@@ -22,6 +22,8 @@ include_directories(lib/glfw/include)
 add_subdirectory(lib/glfw)
 
 if(MSVC)    # Windows
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4 /w14640)
+
     target_include_directories(${PROJECT_NAME}
             PUBLIC ${VULKAN_SDK}/Include
             )
