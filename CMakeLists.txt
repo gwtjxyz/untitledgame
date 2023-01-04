@@ -15,7 +15,7 @@ set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 
 add_executable(untitledgame src/main.cpp src/framework/platform/window.cpp)
 
-find_package(Vulkan REQUIRED FATAL_ERROR)
+find_package(Vulkan REQUIRED)
 
 include_directories(lib/glfw/include)
 
