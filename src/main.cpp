@@ -1,5 +1,6 @@
 #include "framework/core.hpp"
 #include "framework/platform/window.hpp"
+#include "framework/render/vk_renderer.hpp"
 
 int main() {
     if (se::glfw_init() != se::OK) {
@@ -11,6 +12,8 @@ int main() {
     if (!window) {
         return -1;
     }
+
+    VkRenderer renderer("Untitled game");
 
     se::window_loop(window);
 
