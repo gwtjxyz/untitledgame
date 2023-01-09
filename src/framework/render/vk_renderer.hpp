@@ -14,10 +14,18 @@
 #include "../core.hpp"
 #include "../platform/window.hpp"
 
+#include <vector>
+
 class VkRenderer {
 public:
     VkRenderer(const char * applicationName);
-    virtual ~VkRenderer() = default;
+    virtual ~VkRenderer();
 private:
     VkInstance m_Instance;
+    VkDebugUtilsMessengerEXT m_DebugMessenger;
+
+    bool check_validation_layer_support(const char * const layerName);
+    void setup_debug_messenger();
+    VkResult create_debug_utils_messenger_EXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT * createInfo,
+                                              const VkAllocationCallbacks * allocator, VkDebugUtilsMessengerEXT * debugMessenger);
 };
