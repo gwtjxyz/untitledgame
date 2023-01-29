@@ -1,5 +1,8 @@
 #include "window.hpp"
 
+static void glfw_error_callback(int code, const char * desc) {
+    SE_ERROR("GLFW Error %d: %s", code, desc);
+}
 
 i32 se::glfw_init() {
     if (!glfwInit()) {
@@ -11,6 +14,8 @@ i32 se::glfw_init() {
         SE_FATAL("ERROR Vulkan is not supported! Aborting...");
         return se::ERR;
     }
+
+    glfwSetErrorCallback(glfw_error_callback);
 
     return se::OK;
 }

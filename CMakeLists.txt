@@ -15,7 +15,7 @@ set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 
 add_executable(untitledgame src/main.cpp src/framework/platform/window.cpp src/framework/render/vk_renderer.cpp src/framework/render/vk_renderer.hpp)
 
-find_package(Vulkan REQUIRED)
+find_package(Vulkan REQUIRED FATAL_ERROR)
 
 include_directories(lib/glfw/include)
 
@@ -28,9 +28,10 @@ if(MSVC)    # Windows
             PUBLIC ${VULKAN_SDK}/Include
             )
 endif()
-    target_include_directories(${PROJECT_NAME}
-            PUBLIC lib/glfw/include
-            )
+target_include_directories(${PROJECT_NAME}
+        PUBLIC lib/glfw/include
+        PUBLIC lib/glm
+        )
 
 target_link_libraries(${PROJECT_NAME}
         PRIVATE

@@ -14,24 +14,31 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
     return VK_FALSE;
 }
 
-VkRenderer::VkRenderer(const char * const applicationName) {
+VkRenderer::VkRenderer(const char * const appName) {
+    create_instance(appName);
+    setup_debug_messenger();
+    pick_physical_device();
+    create_logical_device();
+}
+
+void VkRenderer::create_instance(const char * const appName) {
     VkApplicationInfo applicationInfo = {
-            VK_STRUCTURE_TYPE_APPLICATION_INFO,
-            nullptr,
-            applicationName,
-            VK_MAKE_VERSION(1, 0, 0),
-            se::WINDOW_TITLE,
-            VK_MAKE_VERSION(1, 0, 0),
-            VK_API_VERSION_1_2
+        VK_STRUCTURE_TYPE_APPLICATION_INFO,
+        nullptr,
+        appName,
+        VK_MAKE_VERSION(1, 0, 0),
+        se::WINDOW_TITLE,
+        VK_MAKE_VERSION(1, 0, 0),
+        VK_API_VERSION_1_3
     };
 
     // TODO make this changeable via compiler parameters?
-    const std::vector<const char *> validationLayers = {
-            "VK_LAYER_KHRONOS_validation"
+    m_ValidationLayers = {
+        "VK_LAYER_KHRONOS_validation"
     };
 
     // TODO extract into separate function
-    for (auto layer : validationLayers) {
+    for (auto layer : m_ValidationLayers) {
         SE_ASSERT(check_validation_layer_support(layer), "Required layer %s is not available!", layer);
     }
 
@@ -43,39 +50,40 @@ VkRenderer::VkRenderer(const char * const applicationName) {
     extensionsVector.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     VkInstanceCreateInfo instanceCreateInfo = {
-            VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-            nullptr,
-            0,
-            &applicationInfo,
-            static_cast<uint32_t>(validationLayers.size()),
-            validationLayers.data(),
-            static_cast<uint32_t>(extensionsVector.size()),
-            extensionsVector.data()
+        VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+        nullptr,
+        0,
+        &applicationInfo,
+        static_cast<uint32_t>(m_ValidationLayers.size()),
+        m_ValidationLayers.data(),
+        static_cast<uint32_t>(extensionsVector.size()),
+        extensionsVector.data()
     };
 
     SE_ASSERT(vkCreateInstance(&instanceCreateInfo, nullptr, &m_Instance) == VK_SUCCESS,
               "Could not create Vulkan instance!");
-
-    setup_debug_messenger();
 }
 
-bool VkRenderer::check_validation_layer_support(const char * const layerName) {
-    u32 availableLayerCount;
-    vkEnumerateInstanceLayerProperties(&availableLayerCount, nullptr);
+void VkRenderer::pick_physical_device() {
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
+    if (deviceCount == 0) {
+        SE_FATAL("Failed to find GPUs with Vulkan support!");
+    }
 
-    std::vector<VkLayerProperties> availableLayers(availableLayerCount);
-    vkEnumerateInstanceLayerProperties(&availableLayerCount, availableLayers.data());
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
 
-    bool layerFound = false;
-
-    for (const auto & layerProperties : availableLayers) {
-        if (strcmp(layerName, layerProperties.layerName) == 0) {
-            layerFound = true;
+    for (const auto & device : devices) {
+        if (is_device_suitable(device)) {
+            m_PhysicalDevice = device;
             break;
         }
     }
 
-    return layerFound;
+    if (m_PhysicalDevice == VK_NULL_HANDLE) {
+        SE_FATAL("Failed to find a suitable GPU!");
+    }
 }
 
 // TODO add some condition for not enabling this
@@ -103,6 +111,40 @@ void VkRenderer::setup_debug_messenger() {
     }
 }
 
+void VkRenderer::create_logical_device() {
+    QueueFamilyIndices indices = find_queue_families(m_PhysicalDevice);
+
+    float queuePriority = 1.0f;
+    VkDeviceQueueCreateInfo queueCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+        .queueFamilyIndex = indices.graphicsFamily.value(),
+        .queueCount = 1,
+        .pQueuePriorities = &queuePriority
+    };
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pQueueCreateInfos = &queueCreateInfo;
+    createInfo.queueCreateInfoCount = 1;
+
+    createInfo.pEnabledFeatures = &deviceFeatures;
+
+    createInfo.enabledExtensionCount = 0;
+   
+    // TODO add a on/off switch for validation layers
+    // that or remove this completely, it's legacy stuff anyway
+    createInfo.enabledLayerCount = (uint32_t) (m_ValidationLayers.size());
+    createInfo.ppEnabledLayerNames = m_ValidationLayers.data();
+
+    if (vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device) != VK_SUCCESS) {
+        SE_FATAL("Failed to create logical device!");
+    }
+
+    vkGetDeviceQueue(m_Device, indices.graphicsFamily.value(), 0, &m_GraphicsQueue);
+}
+
 VkResult VkRenderer::create_debug_utils_messenger_EXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *createInfo,
                                                       const VkAllocationCallbacks *allocator, VkDebugUtilsMessengerEXT *debugMessenger) {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -113,8 +155,58 @@ VkResult VkRenderer::create_debug_utils_messenger_EXT(VkInstance instance, const
     }
 }
 
+VkRenderer::QueueFamilyIndices VkRenderer::find_queue_families(VkPhysicalDevice device) {
+    QueueFamilyIndices indices;
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    int i = 0;
+    for (const auto & queueFamily : queueFamilies) {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphicsFamily = i;
+        }
+
+        if (indices.is_complete()) {
+            break;
+        }
+
+        i++;
+    }
+    return indices;
+}
+
+bool VkRenderer::check_validation_layer_support(const char * const layerName) {
+    u32 availableLayerCount;
+    vkEnumerateInstanceLayerProperties(&availableLayerCount, nullptr);
+
+    std::vector<VkLayerProperties> availableLayers(availableLayerCount);
+    vkEnumerateInstanceLayerProperties(&availableLayerCount, availableLayers.data());
+
+    bool layerFound = false;
+
+    for (const auto & layerProperties : availableLayers) {
+        if (strcmp(layerName, layerProperties.layerName) == 0) {
+            layerFound = true;
+            break;
+        }
+    }
+
+    return layerFound;
+}
+
+// TODO implement this
+bool VkRenderer::is_device_suitable(VkPhysicalDevice device) {
+    QueueFamilyIndices indices = find_queue_families(device);
+
+    return indices.is_complete();
+}
+
 VkRenderer::~VkRenderer() {
     // TODO parametrize
+    vkDestroyDevice(m_Device, nullptr);
     auto destroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(m_Instance, "vkDestroyDebugUtilsMessengerEXT");
     if (destroyDebugUtilsMessengerEXT != nullptr) {
         destroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
