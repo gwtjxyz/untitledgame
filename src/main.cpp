@@ -13,7 +13,7 @@ int main() {
         return -1;
     }
 
-    VkRenderer renderer("Untitled game");
+    VkRenderer renderer("Untitled game", window);
 
     se::window_loop(window);
 

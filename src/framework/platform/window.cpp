@@ -21,6 +21,7 @@ i32 se::glfw_init() {
 }
 
 GLFWwindow * se::window_init() {
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     GLFWwindow * window = glfwCreateWindow(se::WINDOW_WIDTH, se::WINDOW_HEIGHT, se::WINDOW_TITLE, nullptr, nullptr);
 
     if (!window)

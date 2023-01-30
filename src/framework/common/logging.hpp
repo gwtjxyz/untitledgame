@@ -66,6 +66,9 @@ namespace se_internals {
         OutputDebugStringA(msg);
     #endif
         WriteConsoleA(consoleHandle, msg, (u32) strlen(msg), nullptr, nullptr);
+        // Reset log color
+        colorBits = get_log_color_bits(se_internals::TEXT_COLOR_WHITE);
+        SetConsoleTextAttribute(consoleHandle, colorBits);
     }
 #endif
 
