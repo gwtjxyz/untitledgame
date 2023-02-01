@@ -12,6 +12,8 @@
 #pragma once
 
 #include "../core.hpp"
+#include "../render/vk_renderer.hpp"
+
 
 #ifndef GLFW_INCLUDE_VULKAN
 #define GLFW_INCLUDE_VULKAN
@@ -26,6 +28,6 @@ GLFWwindow * window_init();
 
 void window_cleanup();
 
-void window_loop(GLFWwindow * window);
+void window_loop(GLFWwindow * window, VkRenderer & renderer);
 
 } // namespace se

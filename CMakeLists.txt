@@ -13,7 +13,7 @@ endif()
 set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 
-add_executable(untitledgame src/main.cpp src/framework/platform/window.cpp src/framework/render/vk_renderer.cpp src/framework/render/vk_renderer.hpp)
+add_executable(untitledgame src/main.cpp src/framework/platform/window.cpp src/framework/render/vk_renderer.cpp src/framework/render/vk_renderer.hpp src/framework/platform/filesystem.cpp)
 
 find_package(Vulkan REQUIRED FATAL_ERROR)
 

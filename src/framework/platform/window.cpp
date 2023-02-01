@@ -34,9 +34,10 @@ void se::window_cleanup() {
     glfwTerminate();
 }
 
-void se::window_loop(GLFWwindow * window) {
+void se::window_loop(GLFWwindow * window, VkRenderer & renderer) {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+        renderer.draw();
         // TODO other logic
     }
 }

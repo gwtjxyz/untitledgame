@@ -12,7 +12,11 @@
 */
 //----------------------------------------------------------------------------------------
 #include "../core.hpp"
-#include "../platform/window.hpp"
+
+#ifndef GLFW_INCLUDE_VULKAN
+#define GLFW_INCLUDE_VULKAN
+#endif // !GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 
 #include <vector>
 #include <optional>
@@ -21,6 +25,8 @@ class VkRenderer {
 public:
     VkRenderer(const char * applicationName, GLFWwindow * window);
     virtual ~VkRenderer();
+
+    void draw();
 private:
     struct QueueFamilyIndices {
         std::optional<u32> graphicsFamily;
@@ -50,6 +56,19 @@ private:
     VkFormat m_SwapChainImageFormat;
     VkExtent2D m_SwapChainExtent;
 
+    VkRenderPass m_RenderPass;
+    VkPipelineLayout m_PipelineLayout;
+    VkPipeline m_GraphicsPipeline;
+
+    std::vector<VkFramebuffer> m_SwapChainFramebuffers;
+
+    VkCommandPool m_CommandPool;
+    VkCommandBuffer m_CommandBuffer;
+
+    VkSemaphore m_ImageAvailableSemaphore;
+    VkSemaphore m_RenderFinishedSemaphore;
+    VkFence m_InFlightFence;
+
     VkDebugUtilsMessengerEXT m_DebugMessenger;
     std::vector<const char *> m_ValidationLayers;
     std::vector<const char*> m_DeviceExtensions;
@@ -61,6 +80,15 @@ private:
     void create_surface(GLFWwindow * window);
     void create_swap_chain(GLFWwindow * window);
     void create_image_views();
+    void create_render_pass();
+    void create_graphics_pipeline();
+    void create_framebuffers();
+    void create_command_pool();
+    void create_command_buffer();
+    void create_sync_objects();
+
+    void record_command_buffer(VkCommandBuffer commandBuffer, u32 imageIndex);
+
     VkResult create_debug_utils_messenger_EXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT * createInfo,
                                               const VkAllocationCallbacks * allocator, VkDebugUtilsMessengerEXT * debugMessenger);
     QueueFamilyIndices find_queue_families(VkPhysicalDevice device);
@@ -69,6 +97,8 @@ private:
     VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR> & availableFormats);
     VkPresentModeKHR choose_swap_chain_present_mode(const std::vector<VkPresentModeKHR> & availablePresentModes);
     VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR & capabilities, GLFWwindow * window);
+
+    VkShaderModule create_shader_module(const std::vector<char> & spirvCode);
 
     bool check_validation_layer_support(const char * const layerName);
     bool is_device_suitable(VkPhysicalDevice device);

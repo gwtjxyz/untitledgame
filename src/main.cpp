@@ -13,9 +13,9 @@ int main() {
         return -1;
     }
 
+    // TODO probably should put window inside the renderer class
     VkRenderer renderer("Untitled game", window);
-
-    se::window_loop(window);
+    se::window_loop(window, renderer);
 
     se::window_cleanup();
 

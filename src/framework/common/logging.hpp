@@ -104,7 +104,11 @@ namespace se_internals {
 #define SE_TRACE(msg, ...) se_internals::log("TRACE", se_internals::TEXT_COLOR_GREEN,     msg, __VA_ARGS__)
 #define SE_WARN(msg, ...)  se_internals::log("WARN",  se_internals::TEXT_COLOR_YELLOW,    msg, __VA_ARGS__)
 #define SE_ERROR(msg, ...) se_internals::log("ERROR", se_internals::TEXT_COLOR_RED,       msg, __VA_ARGS__)
-#define SE_FATAL(msg, ...) se_internals::log("FATAL", se_internals::TEXT_COLOR_LIGHT_RED, msg, __VA_ARGS__)
+#define SE_FATAL(msg, ...)                                                                 \
+    do {                                                                                   \
+        se_internals::log("FATAL", se_internals::TEXT_COLOR_LIGHT_RED, msg, __VA_ARGS__);  \
+        SE_DEBUG_BREAK;                                                                    \
+    } while (0)                                                                            \
 
 #ifdef _MSC_VER // MSVC
 #define SE_DEBUG_BREAK __debugbreak()
