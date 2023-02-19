@@ -43,6 +43,8 @@ private:
         std::vector<VkPresentModeKHR> presentModes;
     };
 
+    GLFWwindow * m_Window;
+
     VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
     VkInstance m_Instance;
     VkDevice m_Device;
@@ -70,15 +72,18 @@ private:
     VkFence m_InFlightFence;
 
     VkDebugUtilsMessengerEXT m_DebugMessenger;
+    VkDebugReportCallbackEXT m_DebugReportCallback;
     std::vector<const char *> m_ValidationLayers;
     std::vector<const char*> m_DeviceExtensions;
 
+    void setup_debug_messenger();
+    void setup_debug_report();
+
     void create_instance(const char * const applicationName);
     void pick_physical_device();
-    void setup_debug_messenger();
     void create_logical_device();
-    void create_surface(GLFWwindow * window);
-    void create_swap_chain(GLFWwindow * window);
+    void create_surface();
+    void create_swap_chain();
     void create_image_views();
     void create_render_pass();
     void create_graphics_pipeline();

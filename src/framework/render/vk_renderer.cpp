@@ -16,20 +16,46 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
         VkDebugUtilsMessageTypeFlagsEXT type,
         const VkDebugUtilsMessengerCallbackDataEXT * callbackData,
         void * userData) {
-    if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+    //if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+    //    SE_TRACE(callbackData->pMessage);
+    //}
+    if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+        SE_ERROR(callbackData->pMessage);
+    } else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        SE_WARN(callbackData->pMessage);
+    } else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
         SE_TRACE(callbackData->pMessage);
     }
 
     return VK_FALSE;
 }
 
+static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report_callback(
+    VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
+    u64 object, size_t location, i32 messageCode,
+    const char * layerPrefix, const char * message, void * userData) {
+    if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
+        SE_ERROR("Validation Layer: Error: %s: %s", layerPrefix, message);
+    } else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) {
+        SE_WARN("Validation Layer: Warning: %s: %s", layerPrefix, message);
+    } else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) {
+        SE_WARN("Validation Layer: Performance Warning: %s: %s", layerPrefix, message);
+    } else {
+        SE_TRACE("Validation Layer: Information: %s: %s", layerPrefix, message);
+    }
+
+    return VK_FALSE;
+}
+
 VkRenderer::VkRenderer(const char * const appName, GLFWwindow * window) {
+    m_Window = window;
     create_instance(appName);
     setup_debug_messenger();
-    create_surface(window);
+    //setup_debug_report();
+    create_surface();
     pick_physical_device();
     create_logical_device();
-    create_swap_chain(window);
+    create_swap_chain();
     create_image_views();
     create_render_pass();
     create_graphics_pipeline();
@@ -122,7 +148,8 @@ void VkRenderer::create_instance(const char * const appName) {
 
     // TODO make this changeable via compiler parameters?
     m_ValidationLayers = {
-        "VK_LAYER_KHRONOS_validation"
+        "VK_LAYER_KHRONOS_validation",
+        //"VK_EXT_debug_report"
     };
 
     m_DeviceExtensions = {
@@ -203,6 +230,24 @@ void VkRenderer::setup_debug_messenger() {
     }
 }
 
+void VkRenderer::setup_debug_report() {
+    VkDebugReportCallbackCreateInfoEXT createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
+    createInfo.pNext = nullptr;
+    createInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT
+        | VK_DEBUG_REPORT_WARNING_BIT_EXT
+        | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+    createInfo.pfnCallback = debug_report_callback;
+    createInfo.pUserData = nullptr;
+
+    PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallback = VK_NULL_HANDLE;
+    CreateDebugReportCallback = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(m_Instance, "vkCreateDebugReportCallbackEXT");
+
+    if (CreateDebugReportCallback(m_Instance, &createInfo, nullptr, &m_DebugReportCallback) != VK_SUCCESS) {
+        SE_FATAL("Failed to set up debug report callback!");
+    }
+}
+
 void VkRenderer::create_logical_device() {
     QueueFamilyIndices indices = find_queue_families(m_PhysicalDevice);
 
@@ -247,17 +292,17 @@ void VkRenderer::create_logical_device() {
     vkGetDeviceQueue(m_Device, indices.presentFamily.value(), 0, &m_PresentQueue);
 }
 
-void VkRenderer::create_surface(GLFWwindow * window) {
-    if (glfwCreateWindowSurface(m_Instance, window, nullptr, &m_Surface) != VK_SUCCESS) {
+void VkRenderer::create_surface() {
+    if (glfwCreateWindowSurface(m_Instance, m_Window, nullptr, &m_Surface) != VK_SUCCESS) {
         SE_FATAL("Failed to create window surface!");
     }
 }
 
-void VkRenderer::create_swap_chain(GLFWwindow * window) {
+void VkRenderer::create_swap_chain() {
     SwapChainSupportDetails swapChainSupport = query_swap_chain_support(m_PhysicalDevice);
     VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(swapChainSupport.formats);
     VkPresentModeKHR presentMode = choose_swap_chain_present_mode(swapChainSupport.presentModes);
-    VkExtent2D extent = choose_swap_extent(swapChainSupport.capabilities, window);
+    VkExtent2D extent = choose_swap_extent(swapChainSupport.capabilities, m_Window);
 
     u32 imageCount = swapChainSupport.capabilities.minImageCount + 1;
     if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
