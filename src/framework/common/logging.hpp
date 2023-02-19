@@ -72,43 +72,80 @@ namespace se_internals {
     }
 #endif
 
+#ifdef  __linux__ 
+    static const char * get_log_color_symbols(se_internals::Color color) {
+        switch (color) {
+            case TEXT_COLOR_RED:
+                return "\x1B[31m";
+            case TEXT_COLOR_YELLOW:
+                return "\x1B[33m";
+            case TEXT_COLOR_GREEN:
+                return "\x1B[32m";
+            case TEXT_COLOR_LIGHT_RED:
+                return "\x1B[35m";
+            case TEXT_COLOR_WHITE:
+                return "\x1B[37m";
+            default:    // means we should probably define more colours! Hence the annoying combination
+                return "\x1B[37m";
+        }
+    }
+#endif
+
+#ifdef _WIN32
+#define SE_SPRINTF sprintf_s
+#else
+#define SE_SPRINTF sprintf
+#endif
+
     static void platform_log(const char * msg, const se_internals::Color color) {
 #ifdef _WIN32
         windows_log(msg, color);
 #elif __linux__
-        // TODO Linux logger
+        // TODO add colours
+        const char * prefix = get_log_color_symbols(color);
+        // to reset terminal colour to default
+        const char * postfix = "\x1B[0m";
+        printf("%s%s%s", prefix, msg, postfix);
 #else
         // TODO can not log, platform not defined
 #endif
     }
 
     template<typename ...Args>
-    static void log(const char * prefix, const se_internals::Color color, const char * msg, Args ...args) {
+    static void se_log(const char * prefix, const se_internals::Color color, const char * msg, Args ...args) {
         char fmtBuffer[32000] = {};
         char msgBuffer[32000] = {};
-        sprintf_s(fmtBuffer, "%s: %s\n", prefix, msg);
-        sprintf_s(msgBuffer, fmtBuffer, args...);
+        SE_SPRINTF(fmtBuffer, "%s: %s\n", prefix, msg);
 
+// trust me, I'm an engineer
+#ifdef __linux__
+#pragma GCC diagnostic error "-Wformat-security"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+        SE_SPRINTF(msgBuffer, fmtBuffer, args...);
+#ifdef __linux__
+#pragma GCC diagnostic pop
+#endif
         platform_log(msgBuffer, color);
     }
 
     static void line_and_file_info(const char * fileName, int lineNumber) {
         char buffer[32000] = {};
-        sprintf_s(buffer, "%s:%d: ", fileName, lineNumber);
+        SE_SPRINTF(buffer, "%s:%d: ", fileName, lineNumber);
 
         platform_log(buffer, TEXT_COLOR_WHITE);
     }
 } /* namespace se_internals */
 
 #define SE_LINEINFO
-#define SE_TRACE(msg, ...) se_internals::log("TRACE", se_internals::TEXT_COLOR_GREEN,     msg, __VA_ARGS__)
-#define SE_WARN(msg, ...)  se_internals::log("WARN",  se_internals::TEXT_COLOR_YELLOW,    msg, __VA_ARGS__)
-#define SE_ERROR(msg, ...) se_internals::log("ERROR", se_internals::TEXT_COLOR_RED,       msg, __VA_ARGS__)
-#define SE_FATAL(msg, ...)                                                                 \
-    do {                                                                                   \
-        se_internals::log("FATAL", se_internals::TEXT_COLOR_LIGHT_RED, msg, __VA_ARGS__);  \
-        SE_DEBUG_BREAK;                                                                    \
-    } while (0)                                                                            \
+#define SE_TRACE(msg, ...) se_internals::se_log("TRACE", se_internals::TEXT_COLOR_GREEN,     msg __VA_OPT__(,) __VA_ARGS__)
+#define SE_WARN(msg, ...)  se_internals::se_log("WARN",  se_internals::TEXT_COLOR_YELLOW,    msg __VA_OPT__(,) __VA_ARGS__)
+#define SE_ERROR(msg, ...) se_internals::se_log("ERROR", se_internals::TEXT_COLOR_RED,       msg __VA_OPT__(,) __VA_ARGS__)
+#define SE_FATAL(msg, ...) do {                                                                                      \
+        se_internals::se_log("FATAL", se_internals::TEXT_COLOR_LIGHT_RED, msg __VA_OPT__(,) __VA_ARGS__ );           \
+        SE_DEBUG_BREAK;                                                                                              \
+    } while (0)
 
 #ifdef _MSC_VER // MSVC
 #define SE_DEBUG_BREAK __debugbreak()
@@ -117,6 +154,9 @@ namespace se_internals {
 #else   // TODO expand
 #define SE_DEBUG_BREAK
 #endif
+
+// TODO extract this
+#define DEBUG
 
 #if defined DEBUG || defined _DEBUG
 #define SE_ASSERT(x, msg, ...)                                  \

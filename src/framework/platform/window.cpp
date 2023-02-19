@@ -1,10 +1,13 @@
 #include "window.hpp"
 
 static void glfw_error_callback(int code, const char * desc) {
+    printf("GLFW Error %d: %s\n", code, desc);
     SE_ERROR("GLFW Error %d: %s", code, desc);
 }
 
 i32 se::glfw_init() {
+    glfwSetErrorCallback(glfw_error_callback);
+
     if (!glfwInit()) {
         SE_FATAL("ERROR Failed to initialize GLFW! Aborting...");
         return se::ERR;
@@ -14,8 +17,6 @@ i32 se::glfw_init() {
         SE_FATAL("ERROR Vulkan is not supported! Aborting...");
         return se::ERR;
     }
-
-    glfwSetErrorCallback(glfw_error_callback);
 
     return se::OK;
 }

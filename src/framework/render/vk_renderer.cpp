@@ -4,9 +4,12 @@
 
 #include <algorithm>
 #include <cstring>
+#include <filesystem>
 #include <limits>
 #include <set>
 #include <string>
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
         VkDebugUtilsMessageSeverityFlagBitsEXT severity,
@@ -356,6 +359,8 @@ void VkRenderer::create_render_pass() {
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
@@ -375,8 +380,10 @@ void VkRenderer::create_render_pass() {
 
 // what a cool and fun function
 void VkRenderer::create_graphics_pipeline() {
-    auto vertShaderCode = read_file("../../../shaders/compiled/vert.spv");
-    auto fragShaderCode = read_file("../../../shaders/compiled/frag.spv");
+    // auto vertShaderCode = read_file("../../../shaders/compiled/vert.spv");
+    auto vertShaderCode = read_file_fs("shaders/compiled/vert.spv");
+    // auto fragShaderCode = read_file("../../../shaders/compiled/frag.spv");
+    auto fragShaderCode = read_file_fs("shaders/compiled/frag.spv");
 
     VkShaderModule vertShaderModule = create_shader_module(vertShaderCode);
     VkShaderModule fragShaderModule = create_shader_module(fragShaderCode);
