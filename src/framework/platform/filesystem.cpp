@@ -29,4 +29,3 @@ std::vector<char> read_file(const char * const pathToProjectDir, const char * co
 
 	return buffer;
 }
-

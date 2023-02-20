@@ -27,6 +27,7 @@ public:
     virtual ~VkRenderer();
 
     void draw();
+    void trigger_framebuffer_resize();
 private:
     struct QueueFamilyIndices {
         std::optional<u32> graphicsFamily;
@@ -64,12 +65,16 @@ private:
 
     std::vector<VkFramebuffer> m_SwapChainFramebuffers;
 
+    u32 m_CurrentFrame = 0;
+    const int MAX_FRAMES_IN_FLIGHT = 2;
     VkCommandPool m_CommandPool;
-    VkCommandBuffer m_CommandBuffer;
+    std::vector<VkCommandBuffer> m_CommandBuffers;
 
-    VkSemaphore m_ImageAvailableSemaphore;
-    VkSemaphore m_RenderFinishedSemaphore;
-    VkFence m_InFlightFence;
+    std::vector<VkSemaphore> m_ImageAvailableSemaphores;
+    std::vector<VkSemaphore> m_RenderFinishedSemaphores;
+    std::vector<VkFence> m_InFlightFences;
+
+    bool m_FramebufferResized = false;
 
     VkDebugUtilsMessengerEXT m_DebugMessenger;
     VkDebugReportCallbackEXT m_DebugReportCallback;
@@ -77,6 +82,8 @@ private:
     std::vector<const char*> m_DeviceExtensions;
 
     void setup_debug_messenger();
+
+    void setup_glfw_callbacks();
 
     void create_instance(const char * const applicationName);
     void pick_physical_device();
@@ -88,8 +95,11 @@ private:
     void create_graphics_pipeline();
     void create_framebuffers();
     void create_command_pool();
-    void create_command_buffer();
+    void create_command_buffers();
     void create_sync_objects();
+    void cleanup_swap_chain();
+
+    void recreate_swap_chain();
 
     void record_command_buffer(VkCommandBuffer commandBuffer, u32 imageIndex);
 

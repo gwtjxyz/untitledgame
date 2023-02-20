@@ -1,4 +1,5 @@
 #include "window.hpp"
+#include "GLFW/glfw3.h"
 
 static void glfw_error_callback(int code, const char * desc) {
     printf("GLFW Error %d: %s\n", code, desc);
