@@ -6,7 +6,8 @@
  * \brief      Logger header file
  *
  *  Simple multi-platform header file used for logging and assertion.
- *  TODO add support for more compilers/platforms, currently only Windows/MSVC support is properly implemented
+ *  TODO add support for more compilers/platforms, currently works
+ *  on Windows and Linux (Clang)
  */
 //----------------------------------------------------------------------------------------
 #pragma once
@@ -18,6 +19,7 @@
 #include <cstdio>
 #include <cstring>
 #include "types.hpp"
+#include "defines.hpp"
 
 // FIXME get this to work
 namespace se_internals {
@@ -85,18 +87,11 @@ namespace se_internals {
                 return "\x1B[35m";
             case TEXT_COLOR_WHITE:
                 return "\x1B[37m";
-            default:    // means we should probably define more colours! Hence the annoying combination
+            default:
                 return "\x1B[37m";
         }
     }
 #endif
-
-#ifdef _WIN32
-#define SE_SPRINTF sprintf_s
-#else
-#define SE_SPRINTF sprintf
-#endif
-
     static void platform_log(const char * msg, const se_internals::Color color) {
 #ifdef _WIN32
         windows_log(msg, color);
@@ -138,7 +133,15 @@ namespace se_internals {
     }
 } /* namespace se_internals */
 
-#define SE_LINEINFO
+#ifdef _MSC_VER
+#define SE_TRACE(msg, ...) se_internals::se_log("TRACE", se_internals::TEXT_COLOR_GREEN,     msg, __VA_ARGS__)
+#define SE_WARN(msg, ...)  se_internals::se_log("WARN",  se_internals::TEXT_COLOR_YELLOW,    msg, __VA_ARGS__)
+#define SE_ERROR(msg, ...) se_internals::se_log("ERROR", se_internals::TEXT_COLOR_RED,       msg, __VA_ARGS__)
+#define SE_FATAL(msg, ...) do {                                                                         \
+        se_internals::se_log("FATAL", se_internals::TEXT_COLOR_LIGHT_RED, msg, __VA_ARGS__ );           \
+        SE_DEBUG_BREAK;                                                                                 \
+    } while (0)
+#else // __linux__
 #define SE_TRACE(msg, ...) se_internals::se_log("TRACE", se_internals::TEXT_COLOR_GREEN,     msg __VA_OPT__(,) __VA_ARGS__)
 #define SE_WARN(msg, ...)  se_internals::se_log("WARN",  se_internals::TEXT_COLOR_YELLOW,    msg __VA_OPT__(,) __VA_ARGS__)
 #define SE_ERROR(msg, ...) se_internals::se_log("ERROR", se_internals::TEXT_COLOR_RED,       msg __VA_OPT__(,) __VA_ARGS__)
@@ -146,6 +149,9 @@ namespace se_internals {
         se_internals::se_log("FATAL", se_internals::TEXT_COLOR_LIGHT_RED, msg __VA_OPT__(,) __VA_ARGS__ );           \
         SE_DEBUG_BREAK;                                                                                              \
     } while (0)
+#endif
+
+
 
 #ifdef _MSC_VER // MSVC
 #define SE_DEBUG_BREAK __debugbreak()

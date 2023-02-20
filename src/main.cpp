@@ -17,9 +17,7 @@ int main() {
     SE_TRACE("This is a trace");
     SE_WARN("This is a warning");
     SE_ERROR("This is an error");
-    SE_FATAL("This is a fatal error");
     printf("Testing if colours get cleared\n");
-    SE_ASSERT(0, "aaa");
 
     // TODO probably should put window inside the renderer class
     VkRenderer renderer("Untitled game", window);

@@ -16,9 +16,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
         VkDebugUtilsMessageTypeFlagsEXT type,
         const VkDebugUtilsMessengerCallbackDataEXT * callbackData,
         void * userData) {
-    //if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-    //    SE_TRACE(callbackData->pMessage);
-    //}
+    SE_UNUSED(userData);
+    SE_UNUSED(type);
     if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
         SE_ERROR(callbackData->pMessage);
     } else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
@@ -30,28 +29,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
     return VK_FALSE;
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report_callback(
-    VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
-    u64 object, size_t location, i32 messageCode,
-    const char * layerPrefix, const char * message, void * userData) {
-    if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
-        SE_ERROR("Validation Layer: Error: %s: %s", layerPrefix, message);
-    } else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) {
-        SE_WARN("Validation Layer: Warning: %s: %s", layerPrefix, message);
-    } else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) {
-        SE_WARN("Validation Layer: Performance Warning: %s: %s", layerPrefix, message);
-    } else {
-        SE_TRACE("Validation Layer: Information: %s: %s", layerPrefix, message);
-    }
-
-    return VK_FALSE;
-}
-
 VkRenderer::VkRenderer(const char * const appName, GLFWwindow * window) {
     m_Window = window;
     create_instance(appName);
     setup_debug_messenger();
-    //setup_debug_report();
     create_surface();
     pick_physical_device();
     create_logical_device();
@@ -149,7 +130,6 @@ void VkRenderer::create_instance(const char * const appName) {
     // TODO make this changeable via compiler parameters?
     m_ValidationLayers = {
         "VK_LAYER_KHRONOS_validation",
-        //"VK_EXT_debug_report"
     };
 
     m_DeviceExtensions = {
@@ -227,24 +207,6 @@ void VkRenderer::setup_debug_messenger() {
 
     if (create_debug_utils_messenger_EXT(m_Instance, &createInfo, nullptr, &m_DebugMessenger) != VK_SUCCESS) {
         SE_FATAL("Failed to set up debug messenger!");
-    }
-}
-
-void VkRenderer::setup_debug_report() {
-    VkDebugReportCallbackCreateInfoEXT createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-    createInfo.pNext = nullptr;
-    createInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT
-        | VK_DEBUG_REPORT_WARNING_BIT_EXT
-        | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-    createInfo.pfnCallback = debug_report_callback;
-    createInfo.pUserData = nullptr;
-
-    PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallback = VK_NULL_HANDLE;
-    CreateDebugReportCallback = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(m_Instance, "vkCreateDebugReportCallbackEXT");
-
-    if (CreateDebugReportCallback(m_Instance, &createInfo, nullptr, &m_DebugReportCallback) != VK_SUCCESS) {
-        SE_FATAL("Failed to set up debug report callback!");
     }
 }
 
@@ -425,10 +387,8 @@ void VkRenderer::create_render_pass() {
 
 // what a cool and fun function
 void VkRenderer::create_graphics_pipeline() {
-    // auto vertShaderCode = read_file("../../../shaders/compiled/vert.spv");
-    auto vertShaderCode = read_file_fs("shaders/compiled/vert.spv");
-    // auto fragShaderCode = read_file("../../../shaders/compiled/frag.spv");
-    auto fragShaderCode = read_file_fs("shaders/compiled/frag.spv");
+     auto vertShaderCode = read_file("../../../", "shaders/compiled/vert.spv");
+     auto fragShaderCode = read_file("../../../", "shaders/compiled/frag.spv");
 
     VkShaderModule vertShaderModule = create_shader_module(vertShaderCode);
     VkShaderModule fragShaderModule = create_shader_module(fragShaderCode);

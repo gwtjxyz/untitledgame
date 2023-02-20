@@ -2,12 +2,21 @@
 
 #include <cstdio>
 #include <fstream>
-#include <filesystem>
 
-namespace fs = std::filesystem;
+std::vector<char> read_file(const char * const pathToProjectDir, const char * const pathFromProjectDir) {
+	// The rationale for the piece of code below is that for some reason relative
+	// file paths on Windows act differently to relative file paths on Linux
+	// it's a bit annoying to have to supply both arguments if you don't even
+	// necessarily need them, but I can't come up with a cleaner solution currently
+	char fullFilePath[1000];
+#ifdef _WIN32
+	SE_SPRINTF(fullFilePath, "%s%s", pathToProjectDir, pathFromProjectDir);
+#else // __linux__
+	SE_SPRINTF(fullFilePath, "%s", pathFromProjectDir);
+	SE_UNUSED(pathToProjectDir);
+#endif
 
-std::vector<char> read_file(const char * const filename) {
-	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+	std::ifstream file(fullFilePath, std::ios::ate | std::ios::binary);
 
 	if (!file.is_open()) {
 		SE_FATAL("failed to open file!");
@@ -21,12 +30,3 @@ std::vector<char> read_file(const char * const filename) {
 	return buffer;
 }
 
-std::vector<char> read_file_fs(const char * const filename) {
-	auto path = fs::path(filename);
-
-	if (!std::filesystem::exists(path)) {
-		SE_FATAL("Failed to open file %s", path.filename().c_str());
-	}
-
-	return read_file(path.c_str());
-}

@@ -77,7 +77,6 @@ private:
     std::vector<const char*> m_DeviceExtensions;
 
     void setup_debug_messenger();
-    void setup_debug_report();
 
     void create_instance(const char * const applicationName);
     void pick_physical_device();

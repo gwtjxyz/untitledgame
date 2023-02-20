@@ -13,9 +13,7 @@
 #include "../core.hpp"
 
 #include <vector>
-#include <filesystem>
 
-std::vector<char> read_file(const char * const filename);
-
-// filesystem version, may be more portable
-std::vector<char> read_file_fs(const char * const filename);
+// if we are on Windows, we append the path to project dir to the path from project dir
+// if we are on Linux, we just use the path from project dir
+std::vector<char> read_file(const char * const pathToProjectDir, const char * const pathFromProjectDir);
