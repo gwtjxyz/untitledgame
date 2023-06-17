@@ -23,6 +23,7 @@
 
 class VkRenderer {
 public:
+    VkRenderer() = delete;
     VkRenderer(const char * applicationName, GLFWwindow * window);
     virtual ~VkRenderer();
 
@@ -79,24 +80,10 @@ private:
     VkDebugUtilsMessengerEXT m_DebugMessenger;
     VkDebugReportCallbackEXT m_DebugReportCallback;
     std::vector<const char *> m_ValidationLayers;
-    std::vector<const char*> m_DeviceExtensions;
+    std::vector<const char *> m_DeviceExtensions;
 
-    void setup_debug_messenger();
+    void setup_swap_chain();
 
-    void setup_glfw_callbacks();
-
-    void create_instance(const char * const applicationName);
-    void pick_physical_device();
-    void create_logical_device();
-    void create_surface();
-    void create_swap_chain();
-    void create_image_views();
-    void create_render_pass();
-    void create_graphics_pipeline();
-    void create_framebuffers();
-    void create_command_pool();
-    void create_command_buffers();
-    void create_sync_objects();
     void cleanup_swap_chain();
 
     void recreate_swap_chain();
